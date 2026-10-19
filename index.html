@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Biliard 8</title>
+<style>
+:root{--bg:#0a1713;--panel:rgba(10,23,19,.84);--brass:#c9a24b;--ink:#f3ecd8;--mute:#9db3a8;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0a1713}}
+:root[data-theme="dark"]{--bg:#0a1713}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.3 Georgia,"Times New Roman",serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#app{position:relative;width:100%;height:100%}
+#c{display:block;width:100%;height:100%}
+.hud{position:absolute;left:0;right:0;display:flex;gap:8px;padding:8px;align-items:flex-start;pointer-events:none}
+.hud>*{pointer-events:auto}
+.top{top:0;justify-content:space-between}.bot{bottom:0;align-items:center;justify-content:center}
+.chip{background:linear-gradient(180deg,#14281fee,#0a1713ee);backdrop-filter:blur(6px);border:1px solid #2c4a3f;border-radius:10px;padding:6px 10px;min-width:110px;max-width:42%}
+.chip.on{border-color:var(--brass);box-shadow:0 0 0 1px var(--brass)}
+.chip b{display:block;font-size:14px}.chip i{display:block;font-size:12px;color:var(--mute);font-style:normal}
+.tray{display:flex;gap:3px;min-height:12px;margin-top:3px;flex-wrap:wrap}
+.tray u{width:11px;height:11px;border-radius:50%;display:block;border:1px solid #0006}
+#msg{flex:1;text-align:center;font-size:14px;padding:6px;color:var(--ink);text-shadow:0 1px 3px #000;pointer-events:none;transition:opacity .4s}
+.bot{background:linear-gradient(transparent,#0a1713cc 60%);padding-bottom:max(8px,env(safe-area-inset-bottom,0px))}
+#pad{width:76px;height:76px;border-radius:50%;background:var(--panel)}
+.pw{flex:1;max-width:340px;display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--mute)}
+#pow,#elev{width:100%;accent-color:var(--brass);height:24px;margin:0}
+.fine{display:flex;gap:6px}
+button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--brass);border-radius:10px;min-width:44px;height:44px;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#shoot{background:var(--brass);color:#1a1206;font-weight:bold;padding:0 20px;font-size:16px}
+#over{position:absolute;inset:0;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;background:#0a1713dd;text-align:center;font-size:22px}
+#over[hidden]{display:none}
+#tv{position:absolute;top:96px;left:8px;width:min(54vw,330px);background:#000;border:6px solid #2a1a10;border-radius:10px;box-shadow:0 6px 22px #000a;z-index:5;overflow:hidden}
+.tvh{display:flex;gap:4px;padding:4px;background:var(--panel)}
+.tvh input{flex:1;min-width:0;height:36px;border-radius:8px;border:1px solid var(--brass);background:#07110e;color:var(--ink);padding:0 8px;font:inherit;font-size:13px}
+.tvh button{height:36px;min-width:36px;padding:0 6px}
+#yfr iframe{width:100%;aspect-ratio:16/9;border:0;display:block}
+#yopen{display:block;padding:5px 8px;background:var(--panel);color:var(--brass);font-size:12px}
+#yopen[hidden]{display:none}
+button{background:linear-gradient(#1b3429,#0d1d16);box-shadow:inset 0 1px #ffffff1a,0 2px 6px #0007}
+button:active{transform:scale(.96)}
+#tools{position:absolute;right:8px;top:96px;display:flex;flex-direction:column;gap:8px;z-index:4}
+#menu{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:radial-gradient(#10301fe6,#050b09f5)}
+#menu[hidden]{display:none}
+.mcard{width:min(88vw,360px);display:flex;flex-direction:column;gap:10px;text-align:center}
+.mcard h1{margin:0;font:700 48px/1 Georgia,serif;color:var(--brass);letter-spacing:.02em}
+.mcard p{margin:0 0 6px;color:var(--mute)}
+.seg{display:flex;gap:6px}.seg button{flex:1}.seg .on{background:var(--brass);color:#1a1206}
+.big{height:52px;font-size:17px}
+.mcard label{display:flex;gap:8px;align-items:center;justify-content:center;color:var(--ink)}
+.mcard small{color:var(--mute)}
+#pad{box-shadow:0 0 0 2px var(--brass),0 4px 14px #0008}
+</style></head><body>
+<div id="app"><canvas id="c"></canvas>
+<div class="hud top"><div class="chip" id="p1"></div><div id="msg"></div><div class="chip" id="p2"></div></div>
+<div class="hud bot">
+<canvas id="pad" width="152" height="152" aria-label="Zarba nuqtasi (aylanish)"></canvas>
+<div class="pw"><span id="lab">Kuch 40% · burchak 0°</span><input id="pow" type="range" min="4" max="100" value="40" aria-label="Zarba kuchi"><input id="elev" type="range" min="0" max="45" value="0" aria-label="Tayoq burchagi (masse)"></div>
+<div class="fine"><button id="fl" aria-label="Chapga">◀</button><button id="fr" aria-label="Oʻngga">▶</button></div>
+<button id="shoot">Zarba</button></div>
+<div id="tools"><button id="vb" aria-label="Kamera">🎥</button><button id="tvb" aria-label="Televizor (YouTube)">📺</button><button id="mb" aria-label="Menyu">☰</button></div>
+<div id="menu"><div class="mcard"><h1>Biliard 8</h1><p>Haqiqiy fizika · 3D · 8-shar qoidalari</p>
+<div class="seg" id="lv"><button data-l="1">Oson</button><button data-l="2" class="on">Oʻrta</button><button data-l="3">Qiyin</button></div>
+<button class="big" id="mAI">Kompyuterga qarshi</button><button class="big" id="mPV">2 oʻyinchi</button><button class="big" id="mGo" hidden>Davom etish</button>
+<label><input type="checkbox" id="oAssist" checked> Yordamchi chiziqlar</label><label><input type="checkbox" id="oSnd" checked> Ovoz</label><small id="stats"></small></div></div>
+<div id="tv" hidden><div class="tvh"><input id="yurl" placeholder="YouTube havolasini qoʻying" aria-label="YouTube havolasi"><button id="ygo">Qoʻyish</button><button id="ystop" aria-label="Toʻxtatish">⏹</button><button id="yx" aria-label="Yashirish">✕</button></div><div id="yfr"></div><a id="yopen" target="_blank" rel="noopener" hidden>YouTube’da ochish</a></div>
+<div id="over" hidden><div id="otxt"></div><button id="again" style="padding:0 24px">Qayta oʻynash</button><button id="tomenu" style="padding:0 24px">Menyu</button></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+// ---------- Fizika konstantalari (SI: metr, sekund) ----------
+const R=.02858,HL=1.27,HW=.635,X=HL-R,Y=HW-R,G=9.81,MUS=.2,MUR=.012,H=1/480;
+const $=id=>document.getElementById(id);
+const grpOf=n=>n===8?8:n<8?1:2;
+const COL=["#f6f1e4","#f2c200","#1f4fbf","#d12c2c","#4b2a8a","#f07a1a","#1f8a4a","#7a1f2b","#151515"];
+let balls=[],turn=1,groups={1:0,2:0},state="aim",aim=0,spA=0,spB=0,shot=null,tShot=0,ac=null,over=false,brk=true,mode="ai",level=2,assist=true,sndOn=true,stats={you:0,cpu:0},aiPlan=null,aiT=0,aiWait=false,started=false;
+const isAI=()=>mode==="ai"&&turn===2&&state!=="end";
+
+// ---------- 3D sahna ----------
+const app=$("app"),cv=$("c");
+const ren=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.shadowMap.enabled=true;ren.shadowMap.type=THREE.PCFSoftShadowMap;ren.outputEncoding=THREE.sRGBEncoding;ren.toneMapping=THREE.ACESFilmicToneMapping;ren.toneMappingExposure=1.25;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a1713);
+(function(){const c=document.createElement("canvas");c.width=512;c.height=256;const g=c.getContext("2d"),gr=g.createLinearGradient(0,0,0,256);
+gr.addColorStop(0,"#fff3dc");gr.addColorStop(.5,"#3a4a45");gr.addColorStop(1,"#0b1411");g.fillStyle=gr;g.fillRect(0,0,512,256);
+g.fillStyle="#fff";for(const x of[40,170,300,430])g.fillRect(x,50,70,36);
+const t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;t.encoding=THREE.sRGBEncoding;
+const pm=new THREE.PMREMGenerator(ren);scene.environment=pm.fromEquirectangular(t).texture;pm.dispose()})();
+const cam=new THREE.PerspectiveCamera(38,1,.1,20);cam.up.set(0,0,-1);
+const world=new THREE.Group();scene.add(world);
+scene.add(new THREE.HemisphereLight(0xffffff,0x1b3a2e,.75));
+const sp=new THREE.SpotLight(0xfff1d6,1.15);sp.position.set(0,2.6,.2);sp.angle=.8;sp.penumbra=.7;sp.castShadow=true;sp.shadow.mapSize.set(2048,2048);sp.shadow.bias=-.0004;scene.add(sp);
+const M=(c,r,m)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m||0,envMapIntensity:.25});
+function canvasTex(w,h,draw,rx,ry){const c=document.createElement("canvas");c.width=w;c.height=h;draw(c.getContext("2d"),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.encoding=THREE.sRGBEncoding;t.anisotropy=8;return t}
+const noise=canvasTex(128,128,(g,w,h)=>{for(let y=0;y<h;y++)for(let x=0;x<w;x++){const v=205+Math.random()*50|0;g.fillStyle=`rgb(${v},${v},${v})`;g.fillRect(x,y,1,1)}},16,8);
+const cm=M(0x14674f,1);cm.map=noise;cm.bumpMap=noise;cm.bumpScale=.6;
+const cloth=new THREE.Mesh(new THREE.PlaneGeometry(2*HL+.2,2*HW+.2),cm);cloth.rotation.x=-Math.PI/2;cloth.receiveShadow=true;world.add(cloth);
+const grain=canvasTex(256,64,(g,w,h)=>{g.fillStyle="#4d2816";g.fillRect(0,0,w,h);for(let i=0;i<80;i++){g.strokeStyle=`rgba(${15+Math.random()*45|0},${6+Math.random()*16|0},3,${.15+Math.random()*.3})`;g.lineWidth=1+Math.random()*2;g.beginPath();const y=Math.random()*h;g.moveTo(0,y);g.bezierCurveTo(w/3,y+Math.random()*8-4,w*2/3,y+Math.random()*8-4,w,y);g.stroke()}},3,1);
+const wood=M(0xffffff,.38);wood.map=grain;wood.envMapIntensity=.5;const cush=M(0x0f5640,1);
+function box(w,h,d,x,y,z,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;world.add(o)}
+for(const s of[-1,1]){
+  box(2*HL+.34,.09,.15,0,0,s*(HW+.125),wood);box(.15,.09,2*HW,s*(HL+.125),0,0,wood);
+  box(2*HL-.2,.04,.05,0,.02,s*(HW+.025),cush);box(.05,.04,2*HW-.2,s*(HL+.025),.02,0,cush);
+}
+const blk=new THREE.MeshBasicMaterial({color:0x020202});
+for(const p of[[1,1,.07],[1,-1,.07],[-1,1,.07],[-1,-1,.07]]){const d=new THREE.Mesh(new THREE.CircleGeometry(.062,24),blk);d.rotation.x=-Math.PI/2;d.position.set(p[0]*(HL+.02),.046,p[1]*(HW+.02));world.add(d)}
+for(const s of[-1,1]){const d=new THREE.Mesh(new THREE.CircleGeometry(.05,24),blk);d.rotation.x=-Math.PI/2;d.position.set(0,.046,s*(HW+.045));world.add(d)}
+const dm=new THREE.MeshBasicMaterial({color:0xe9e1c9}),dg=new THREE.CircleGeometry(.0075,12),brass=M(0xb88a35,.35,.85);
+function pearl(x,z){const d=new THREE.Mesh(dg,dm);d.rotation.x=-Math.PI/2;d.position.set(x,.0462,z);world.add(d)}
+for(const s of[-1,1]){for(let i=-3;i<=3;i++)if(i)pearl(i*HL/4,s*(HW+.125));for(const y of[-.32,0,.32])pearl(s*(HL+.125),y)}
+const pk2=[];for(const sx of[-1,1])for(const sy of[-1,1])pk2.push([sx*(HL+.02),sy*(HW+.02),.062]);pk2.push([0,HW+.045,.05],[0,-HW-.045,.05]);
+for(const p of pk2){const r=new THREE.Mesh(new THREE.RingGeometry(p[2]-.004,p[2]+.008,28),brass);r.rotation.x=-Math.PI/2;r.position.set(p[0],.0468,p[1]);world.add(r)}
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(10,10),M(0x1c1612,.9));floor.rotation.x=-Math.PI/2;floor.position.y=-.8;floor.receiveShadow=true;world.add(floor);
+box(2*HL+.3,.7,2*HW+.3,0,-.4,0,wood);
+scene.fog=new THREE.Fog(0x0a1713,3.6,10);
+const wall=new THREE.Mesh(new THREE.CylinderGeometry(6,6,4,40,1,true),new THREE.MeshStandardMaterial({color:0x1d1611,roughness:.95,side:THREE.BackSide}));wall.position.y=1.2;scene.add(wall);
+const lampG=new THREE.Group();lampG.add(new THREE.Mesh(new THREE.BoxGeometry(1.5,.04,.36),new THREE.MeshBasicMaterial({color:0xfff2d0})));
+const shd=new THREE.Mesh(new THREE.BoxGeometry(1.62,.12,.48),M(0x0d3b2c,.5,.3));shd.position.y=.08;lampG.add(shd);lampG.position.set(0,1.5,0);world.add(lampG);
+
+// ---------- Sharlar ----------
+function tex(n){const c=document.createElement("canvas");c.width=256;c.height=128;const g=c.getContext("2d");
+  const col=COL[n>8?n-8:n];g.fillStyle=n>8||n===0?COL[0]:col;g.fillRect(0,0,256,128);
+  if(n>8){g.fillStyle=col;g.fillRect(0,32,256,64)}
+  for(const u of[64,192]){
+    if(n===0){g.fillStyle="#c33";g.beginPath();g.arc(u,64,6,0,7);g.fill()}
+    else{g.fillStyle="#f6f1e4";g.beginPath();g.arc(u,64,21,0,7);g.fill();g.fillStyle="#111";g.font="bold 25px Georgia";g.textAlign="center";g.textBaseline="middle";g.fillText(n,u,66)}}
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t}
+const sg=new THREE.SphereGeometry(R,48,32);
+function mkBall(n,x,y){const mesh=new THREE.Mesh(sg,new THREE.MeshPhysicalMaterial({map:tex(n),roughness:.2,clearcoat:1,clearcoatRoughness:.04,envMapIntensity:1.3}));
+  mesh.castShadow=true;world.add(mesh);return{n,x,y,vx:0,vy:0,wx:0,wy:0,wz:0,out:false,fall:0,mesh}}
+function reset(){
+  balls.forEach(b=>world.remove(b.mesh));balls=[mkBall(0,-HL/2,0)];
+  const sol=[1,2,3,4,5,6,7],str=[9,10,11,12,13,14,15];
+  const s=sol.splice(Math.random()*7|0,1)[0],t=str.splice(Math.random()*7|0,1)[0];
+  const rest=sol.concat(str).sort(()=>Math.random()-.5),arr=[];arr[4]=8;arr[10]=s;arr[14]=t;
+  let k=0;for(let i=0;i<15;i++)if(!arr[i])arr[i]=rest[k++];
+  let i=0;for(let r=0;r<5;r++)for(let j=0;j<=r;j++)balls.push(mkBall(arr[i++],HL/2+r*R*1.74,(j-r/2)*2.002*R));
+  turn=1;groups={1:0,2:0};state="placing";brk=true;aim=0;over=false;$("over").hidden=true;
+  toast("Tanaffus: oq sharni bosh chiziq ortiga qoʻying va qoʻyib yuboring");hud();
+}
+
+// ---------- Fizika ----------
+function snd(v){if(!ac||!sndOn)return;v=Math.min(1,v/3);if(v<.04)return;const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.value=850+Math.random()*350;
+  g.gain.setValueAtTime(.22*v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.06);o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.07)}
+function roll(b,dt){if(dt<=0)return;const sp=Math.hypot(b.vx,b.vy);
+  if(sp<1e-3){b.vx=b.vy=b.wx=b.wy=0;return}
+  const f=(sp-Math.min(sp,MUR*G*dt))/sp;b.vx*=f;b.vy*=f;b.wx=-b.vy/R;b.wy=b.vx/R}
+function pot(b){b.out=true;b.fall=0;b.vx=b.vy=b.wx=b.wy=b.wz=0;shot.pots.push(b.n);snd(1.2)}
+function bounce(b,nx,ny,pen){
+  b.x+=nx*pen;b.y+=ny*pen;const vn=b.vx*nx+b.vy*ny;if(vn>=0)return;
+  const tx=-ny,ty=nx,e=Math.max(.55,.88-.045*-vn),jn=-(1+e)*vn;
+  b.vx+=jn*nx;b.vy+=jn*ny;
+  const ut=b.vx*tx+b.vy*ty-R*b.wz,jt=Math.max(-.2*jn,Math.min(.2*jn,-ut/3.5));
+  b.vx+=jt*tx;b.vy+=jt*ty;b.wz-=2.5*jt/R;
+  const kh=2.5*.27*jn/R;b.wx+=kh*tx;b.wy+=kh*ty; // band choʻqqisi shar markazidan 0,27R yuqorida: gorizontal aylanish oʻzgaradi
+  if(shot.first!==null)shot.rail=true;if(b.n)shot.rs.add(b.n);snd(-vn*.6)}
+// Choʻntak jag‘lari (yumaloq band uchlari): burchak ogʻzi 8,5 sm, oʻrta choʻntak 5,8 sm
+const CM=.085,SM=.058,RK=.011,KN=[];
+for(const sx of[-1,1])for(const sy of[-1,1])KN.push([sx*(HL-CM),sy*(HW+RK)],[sx*(HL+RK),sy*(HW-CM)]);
+KN.push([SM,HW+RK],[-SM,HW+RK],[SM,-HW-RK],[-SM,-HW-RK]);
+const PK=[];for(const sx of[-1,1])for(const sy of[-1,1])PK.push([sx*HL,sy*HW,.07]);PK.push([0,HW,.05],[0,-HW,.05]);
+function cushions(b){
+  for(const p of PK)if(Math.hypot(b.x-p[0],b.y-p[1])<p[2]){pot(b);return}
+  const ax=Math.abs(b.x),ay=Math.abs(b.y);
+  if(ax>HL||ay>HW){pot(b);return}
+  for(const k of KN){const dx=b.x-k[0],dy=b.y-k[1],d=Math.hypot(dx,dy);if(d>0&&d<R+RK)bounce(b,dx/d,dy/d,R+RK-d)}
+  if(ay>Y&&ax>SM&&ax<HL-CM)bounce(b,0,b.y>0?-1:1,ay-Y);
+  if(ax>X&&ay<HW-CM)bounce(b,b.x>0?-1:1,0,ax-X)}
+function collide(){
+  for(let i=0;i<balls.length;i++){const a=balls[i];if(a.out)continue;
+    for(let j=i+1;j<balls.length;j++){const b=balls[j];if(b.out)continue;
+      const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;if(d2>=4*R*R||d2===0)continue;
+      const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,ov=2*R-d;
+      a.x-=nx*ov/2;a.y-=ny*ov/2;b.x+=nx*ov/2;b.y+=ny*ov/2;
+      const vn=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(vn>=0)continue;
+      if(shot.first===null&&(a.n===0||b.n===0))shot.first=a.n===0?b.n:a.n;
+      const q=-(1+.95)*vn/2;a.vx-=q*nx;a.vy-=q*ny;b.vx+=q*nx;b.vy+=q*ny;
+      const tx=-ny,ty=nx,vt=(b.vx-a.vx)*tx+(b.vy-a.vy)*ty-R*(a.wz+b.wz),J=Math.max(-.06*q,Math.min(.06*q,-vt/7));
+      a.vx-=J*tx;a.vy-=J*ty;b.vx+=J*tx;b.vy+=J*ty;a.wz-=2.5*J/R;b.wz-=2.5*J/R;snd(-vn)}}}
+function step(dt){
+  for(const b of balls){if(b.out)continue;
+    const ux=b.vx-R*b.wy,uy=b.vy+R*b.wx,um=Math.hypot(ux,uy);
+    if(um>1e-4){const a=MUS*G,ts=Math.min(dt,um/(3.5*a)),ax=-a*ux/um,ay=-a*uy/um;
+      b.vx+=ax*ts;b.vy+=ay*ts;b.wx+=2.5*ay*ts/R;b.wy-=2.5*ax*ts/R;roll(b,dt-ts)}else roll(b,dt);
+    const dz=dt*30;b.wz=Math.abs(b.wz)<dz?0:b.wz-Math.sign(b.wz)*dz;
+    b.x+=b.vx*dt;b.y+=b.vy*dt;cushions(b)}
+  collide()}
+const moving=()=>balls.some(b=>!b.out&&(b.vx||b.vy||b.wx||b.wy));
+
+// ---------- Qoidalar (8-shar) ----------
+function endShot(){
+  balls.forEach(b=>{b.vx=b.vy=b.wx=b.wy=b.wz=0});
+  const my=groups[turn],pots=shot.pots.filter(n=>n),cue=shot.pots.includes(0);
+  const left=g=>balls.filter(b=>!b.out&&b.n&&grpOf(b.n)===g).length;
+  let foul=false,msg="";
+  if(cue){foul=true;msg="oq shar tushdi"}
+  else if(shot.first===null){foul=true;msg="hech narsaga tegmadi"}
+  else if(my){if(grpOf(shot.first)!==(left(my)?my:8)){foul=true;msg="notoʻgʻri shar"}}
+  else if(shot.first===8){foul=true;msg="avval 8-sharga tegdi"}
+  if(!foul&&!shot.rail&&!pots.length){foul=true;msg="hech bir shar bandga tegmadi"}
+  const wasBrk=brk;brk=false;
+  if(wasBrk&&pots.includes(8)){const t0=turn;reset();turn=t0;brk=true;hud();toast("Tanaffusda 8-shar tushdi: qayta terildi");return}
+  if(wasBrk&&!foul&&!pots.length&&shot.rs.size<4){foul=true;msg="tanaffusda 4 ta shar bandga tegmadi"}
+  if(pots.includes(8)){const ok=my&&left(my)===0&&!foul;return finish(ok?turn:3-turn,ok?"8-shar toʻgʻri tushdi!":"8-shar notoʻgʻri tushdi")}
+  if(!my&&!foul&&pots.length){groups[turn]=grpOf(pots[0]);groups[3-turn]=3-grpOf(pots[0])}
+  const keep=!foul&&pots.some(n=>grpOf(n)===groups[turn]);
+  if(!keep)turn=3-turn;
+  if(foul){const c=balls[0];if(c.out){c.out=false;c.fall=0;c.mesh.visible=true;c.x=-HL/2;c.y=0}
+    state="placing";toast(`Xato: ${msg}. Oq sharni istalgan joyga qoʻying`)}
+  else{state="aim";toast(keep?"Zoʻr! Yana zarba":"Navbat almashdi")}
+  hud()}
+function finish(w,t){state="end";over=true;if(mode==="ai"){stats[w===1?"you":"cpu"]++;try{localStorage.setItem("bil8",JSON.stringify(stats))}catch(e){}}$("otxt").textContent=`${t}\n${mode==="ai"?(w===1?"Siz":"Kompyuter"):"Oʻyinchi "+w} gʻolib!`;$("otxt").style.whiteSpace="pre-line";$("over").hidden=false}
+
+// ---------- Zarba ----------
+const squirt=()=>.105*spA/Math.max(.3,Math.sqrt(Math.max(0,1-spA*spA-spB*spB)));
+function shoot(by){if(state!=="aim"||!$("menu").hidden||(isAI()&&by!=="ai"))return;ac=ac||new(window.AudioContext||window.webkitAudioContext)();state="strike";strike=0}
+function doShoot(){
+  // 3D zarba: tayoq burchagi th, uchi nuqtasi P; impuls J=m·v·c, aylanish w=(P×J)/I; yon siljish (squirt) ham hisobda
+  const c=balls[0],v=Math.max(.15,$("pow").value/100*7.5),th=$("elev").value*Math.PI/180,ct=Math.cos(th),st=Math.sin(th),dx=Math.cos(aim),dy=Math.sin(aim);
+  const ex=dy,ey=-dx,s=Math.sqrt(Math.max(0,1-spA*spA-spB*spB)),cx=ct*dx,cy=ct*dy,cz=-st;
+  const px=spA*ex+spB*st*dx-s*cx,py=spA*ey+spB*st*dy-s*cy,pz=spB*ct-s*cz,k=2.5*v/R,ps=squirt(),cp=Math.cos(ps),sn=Math.sin(ps);
+  c.vx=v*ct*(dx*cp-ex*sn);c.vy=v*ct*(dy*cp-ey*sn);
+  c.wx=k*(py*cz-pz*cy);c.wy=k*(pz*cx-px*cz);c.wz=k*(px*cy-py*cx);
+  shot={first:null,pots:[],rail:false,rs:new Set()};tShot=0;state="roll";snd(v/2)}
+
+// ---------- Kiritish ----------
+const ray=new THREE.Raycaster(),pl=new THREE.Plane(new THREE.Vector3(0,1,0),-R),pt=new THREE.Vector3(),m2=new THREE.Vector2();
+function toTable(e){const r=cv.getBoundingClientRect();m2.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(m2,cam);ray.ray.intersectPlane(pl,pt);world.worldToLocal(pt);return[pt.x,-pt.z]}
+function drag(e){if(isAI())return;if(view==="cue"&&state==="aim"){if(lastX!==null)aim-=(e.clientX-lastX)*.0032;lastX=e.clientX;return}const[px,py]=toTable(e),c=balls[0];
+  if(state==="aim"){if(Math.hypot(px-c.x,py-c.y)>.06)aim=Math.atan2(py-c.y,px-c.x)}
+  else if(state==="placing"){const x=Math.max(-X,Math.min(brk?-HL/2:X,px)),y=Math.max(-Y,Math.min(Y,py));
+    if(!balls.some(b=>b!==c&&!b.out&&Math.hypot(b.x-x,b.y-y)<2.05*R)){c.x=x;c.y=y}}}
+cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);lastX=e.clientX;drag(e)});
+cv.addEventListener("pointermove",e=>{if(e.buttons)drag(e)});
+cv.addEventListener("pointerup",()=>{if(state==="placing"){state="aim";toast("Nishonni suring va zarba bering")}});
+cv.addEventListener("wheel",e=>{aim+=e.deltaY*1e-4},{passive:true});
+addEventListener("keydown",e=>{if(e.target.id==="yurl")return;if(e.key==="ArrowLeft")aim+=.002;if(e.key==="ArrowRight")aim-=.002;if(e.key===" "||e.key==="Enter")shoot()});
+let iv;for(const[id,d]of[["fl",1],["fr",-1]]){const el=$(id);
+  el.addEventListener("pointerdown",()=>{clearInterval(iv);aim+=d*.002;iv=setInterval(()=>aim+=d*.0015,30)});
+  for(const t of["pointerup","pointerleave","pointercancel"])el.addEventListener(t,()=>clearInterval(iv))}
+$("shoot").onclick=shoot;$("again").onclick=reset;
+const pad=$("pad"),pg=pad.getContext("2d");
+function drawPad(){pg.clearRect(0,0,152,152);pg.fillStyle="#f6f1e4";pg.beginPath();pg.arc(76,76,70,0,7);pg.fill();
+  pg.strokeStyle="#0003";pg.beginPath();pg.moveTo(76,6);pg.lineTo(76,146);pg.moveTo(6,76);pg.lineTo(146,76);pg.stroke();
+  pg.fillStyle="#c33";pg.beginPath();pg.arc(76+spA*2*70,76-spB*2*70,9,0,7);pg.fill()}
+function padSet(e){const r=pad.getBoundingClientRect();let a=(e.clientX-r.left)/r.width-.5,b=-((e.clientY-r.top)/r.height-.5);
+  const l=Math.hypot(a,b);if(l>.5){a*=.5/l;b*=.5/l}spA=a;spB=b;drawPad()}
+pad.addEventListener("pointerdown",e=>{pad.setPointerCapture(e.pointerId);padSet(e)});
+pad.addEventListener("pointermove",e=>{if(e.buttons)padSet(e)});
+
+// ---------- HUD ----------
+let tm;function toast(t){const m=$("msg");m.textContent=t;m.style.opacity=1;clearTimeout(tm);tm=setTimeout(()=>m.style.opacity=.55,4500)}
+function dot(b){const c=COL[b.n>8?b.n-8:b.n];return`<u style="background:${b.n>8?`linear-gradient(#f6f1e4 28%,${c} 28% 72%,#f6f1e4 72%)`:c}"></u>`}
+function hud(){for(const k of[1,2]){const g=groups[k];
+  $("p"+k).className="chip"+(turn===k?" on":"");
+  $("p"+k).innerHTML=`<b>${mode==="ai"?(k===1?"Siz":"Kompyuter"):"Oʻyinchi "+k}</b><i>${!g?"Ochiq stol":g===1?"Yaxlit 1–7":"Yoʻl-yoʻl 9–15"}</i><span class="tray">${balls.filter(b=>b.out&&b.n&&g&&grpOf(b.n)===g).map(dot).join("")}</span>`}}
+
+// ---------- Nishon chiziqlari va tayoq ----------
+const lineMat=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.8});
+const mkLine=()=>{const g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(new Float32Array(6),3));const l=new THREE.Line(g,lineMat);l.position.y=.004;world.add(l);return l};
+const lA=mkLine(),lB=mkLine(),lC=mkLine();lC.material=new THREE.LineBasicMaterial({color:0x7fd6ff,transparent:true,opacity:.75});
+const ghost=new THREE.Mesh(new THREE.RingGeometry(R*.88,R,32),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));ghost.rotation.x=-Math.PI/2;ghost.position.y=.005;world.add(ghost);
+const cue=new THREE.Group();
+const part=(g,m,y)=>{const o=new THREE.Mesh(g,m);o.position.y=y;o.castShadow=true;cue.add(o)};
+part(new THREE.CylinderGeometry(.0062,.0062,.013,12),M(0x2b6cc4,.9),.7195);
+part(new THREE.CylinderGeometry(.0068,.0068,.025,12),M(0xf5f0e0,.4),.7);
+part(new THREE.CylinderGeometry(.0075,.0115,.5875,16),M(0xe2c08a,.35),.39375);
+part(new THREE.CylinderGeometry(.0115,.0165,.825,16),M(0x2a1208,.3,.1),-.3125);
+part(new THREE.CylinderGeometry(.0128,.0128,.07,16),M(0xb88a35,.3,.8),-.42);
+world.add(cue);
+const setL=(l,a,b,c,d)=>{const p=l.geometry.attributes.position;p.setXYZ(0,a,0,-b);p.setXYZ(1,c,0,-d);p.needsUpdate=true};
+function guide(){
+  const c=balls[0],ae=aim+squirt(),dx=Math.cos(ae),dy=Math.sin(ae);let best=1e9,hit=null;
+  for(const b of balls){if(b===c||b.out)continue;const fx=b.x-c.x,fy=b.y-c.y,pr=fx*dx+fy*dy;if(pr<=0)continue;
+    const d2=fx*fx+fy*fy-pr*pr;if(d2>=4*R*R)continue;const t=pr-Math.sqrt(4*R*R-d2);if(t<best){best=t;hit=b}}
+  let tw=1e9;if(dx>1e-9)tw=Math.min(tw,(X-c.x)/dx);else if(dx<-1e-9)tw=Math.min(tw,(-X-c.x)/dx);
+  if(dy>1e-9)tw=Math.min(tw,(Y-c.y)/dy);else if(dy<-1e-9)tw=Math.min(tw,(-Y-c.y)/dy);
+  const L=Math.min(best,tw),gx=c.x+dx*L,gy=c.y+dy*L;setL(lA,c.x,c.y,gx,gy);
+  if(hit&&best<=tw){const nx=hit.x-gx,ny=hit.y-gy,n=Math.hypot(nx,ny);setL(lB,hit.x,hit.y,hit.x+nx/n*.3,hit.y+ny/n*.3);ghost.position.x=gx;ghost.position.z=-gy;ghost.visible=lB.visible=lC.visible=assist;
+    const dn=(dx*nx+dy*ny)/n,tx=dx-dn*nx/n,ty=dy-dn*ny/n,tl=Math.hypot(tx,ty)||1;setL(lC,gx,gy,gx+tx/tl*.25,gy+ty/tl*.25)}
+  else ghost.visible=lB.visible=lC.visible=false;
+  const th=$("elev").value*Math.PI/180,d=new THREE.Vector3(Math.cos(th)*Math.cos(aim),-Math.sin(th),-Math.cos(th)*Math.sin(aim)),right=new THREE.Vector3(Math.sin(aim),0,Math.cos(aim)),pull=$("pow").value/100*.16*(state==="strike"?Math.max(0,1-strike/.12):1);
+  cue.position.set(c.x,R,-c.y).addScaledVector(d,-(R+.012+pull+.725)).addScaledVector(right,spA*R).add(new THREE.Vector3(0,spB*R+.012,0));
+  cue.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d)}
+
+// ---------- Chizish tsikli ----------
+function resize(){const w=app.clientWidth,h=app.clientHeight;ren.setSize(w,h,false);cam.aspect=w/h;
+  const port=w<h;portrait=port;
+  const tf=Math.tan(cam.fov*Math.PI/360),hx=(port?HW:HL)+.2,hz=(port?HL:HW)+.2;
+  const Hh=Math.max(hx/(tf*cam.aspect),hz/tf)*(port?1.12:1.18);topPos.set(0,Hh,Hh*.1)}
+addEventListener("resize",resize);
+let view="cue",lastMode="",lastX=null,strike=0,portrait=false,snap=true;const topPos=new THREE.Vector3(),camPos=new THREE.Vector3(),camTgt=new THREE.Vector3();
+let last=0,acc=0;const q=new THREE.Quaternion(),ax=new THREE.Vector3();
+function loop(t){requestAnimationFrame(loop);const dt=Math.min((t-last)/1000,.05);last=t;
+  if($("menu").hidden&&isAI()){
+    if(state==="placing"){const c=balls[0];for(const[x,y]of[[-HL/2,0],[-HL/2,.15],[-HL/2,-.15],[-.4,0],[0,.2]])if(!balls.some(b=>b!==c&&!b.out&&Math.hypot(b.x-x,b.y-y)<2.2*R)){c.x=x;c.y=y;break}state="aim"}
+    else if(state==="aim"&&!aiPlan&&!aiWait){aiWait=true;setTimeout(()=>{aiPlan=aiPick();aiT=0;aiWait=false},900)}
+    if(aiPlan&&state==="aim"){aiT+=dt;const da=((aiPlan.ang-aim+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;aim+=da*Math.min(1,dt*5);$("pow").value=aiPlan.pw;upd();if(aiT>1.5){aiPlan=null;shoot("ai")}}}
+  if(state==="strike"){strike+=dt;if(strike>=.12)doShoot()}
+  if(state==="roll"){acc+=dt;tShot+=dt;let n=0;while(acc>=H&&n<16){step(H);acc-=H;n++}if(n===16)acc=0;
+    if(!moving()||tShot>60)endShot()}
+  for(const b of balls){const m=b.mesh;
+    if(b.out){b.fall+=dt*3;m.position.set(b.x,R-b.fall*.14,-b.y);m.visible=b.fall<1;continue}
+    m.position.set(b.x,R,-b.y);
+    if(state==="roll"){ax.set(b.wx,b.wz,-b.wy);const l=ax.length();if(l>1e-4){q.setFromAxisAngle(ax.divideScalar(l),l*dt);m.quaternion.premultiply(q)}}}
+  const showAim=state==="aim"||state==="strike";cue.visible=showAim;lA.visible=showAim&&assist;if(!showAim)ghost.visible=lB.visible=lC.visible=false;
+  if(showAim)guide();
+  const mode=state==="placing"?"top":view;if(mode!==lastMode){snap=true;lastMode=mode}
+  world.rotation.y=mode==="top"&&portrait?Math.PI/2:0;world.updateMatrixWorld();lampG.visible=mode==="cue";
+  if(mode==="top"){cam.fov=38;cam.up.set(0,0,-1);cam.position.copy(topPos);cam.lookAt(0,0,0)}
+  else{const c=balls[0],d=new THREE.Vector3(Math.cos(aim),0,-Math.sin(aim)),cp=new THREE.Vector3(c.x,R,-c.y),k=1-Math.exp(-dt*9);
+    const tg=cp.clone().addScaledVector(d,state==="roll"?0:.5);tg.y=.02;world.localToWorld(tg);
+    if(state!=="roll"){const ps=cp.clone().addScaledVector(d,-1);ps.y=.46;world.localToWorld(ps);snap?camPos.copy(ps):camPos.lerp(ps,k)}
+    snap?camTgt.copy(tg):camTgt.lerp(tg,k);snap=false;
+    cam.fov=portrait?62:46;cam.up.set(0,1,0);cam.position.copy(camPos);cam.lookAt(camTgt)}
+  cam.updateProjectionMatrix();
+  ren.render(scene,cam)}
+// ---------- Televizor: YouTube ----------
+function ytId(u){u=u.trim();const m=u.match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/|\/v\/)([\w-]{11})/);if(m)return{v:m[1]};const l=u.match(/[?&]list=([\w-]+)/);if(l)return{l:l[1]};return/^[\w-]{11}$/.test(u)?{v:u}:null}
+$("tvb").onclick=()=>{const t=$("tv");t.hidden=!t.hidden;if(!t.hidden)$("yurl").focus()};
+$("yx").onclick=()=>{$("tv").hidden=true}; // yashirilganda musiqa davom etadi
+$("ystop").onclick=()=>{$("yfr").innerHTML="";$("yopen").hidden=true};
+$("ygo").onclick=()=>{const r=ytId($("yurl").value);if(!r){const q=$("yurl").value.trim(),a=$("yopen");a.href="https://www.youtube.com/results?search_query="+encodeURIComponent(q);a.textContent="YouTube’da “"+q+"” ni qidirish";a.hidden=!q;toast("Bu havola emas. Qoʻshiqni YouTube’da topib, havolasini shu yerga qoʻying");return}
+  const q="autoplay=1&playsinline=1&rel=0",src=r.v?`https://www.youtube.com/embed/${r.v}?${q}`:`https://www.youtube.com/embed/videoseries?list=${r.l}&${q}`;
+  $("yfr").innerHTML=`<iframe src="${src}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen title="YouTube"></iframe>`;
+  const a=$("yopen");a.textContent="YouTube’da ochish";a.href=r.v?`https://www.youtube.com/watch?v=${r.v}`:`https://www.youtube.com/playlist?list=${r.l}`;a.hidden=false};
+$("vb").onclick=()=>{view=view==="cue"?"top":"cue";snap=true};
+const distSeg=(px,py,x1,y1,x2,y2)=>{const dx=x2-x1,dy=y2-y1,l2=dx*dx+dy*dy||1e-9;let t=((px-x1)*dx+(py-y1)*dy)/l2;t=Math.max(0,Math.min(1,t));return Math.hypot(px-x1-t*dx,py-y1-t*dy)};
+const AIP=[];for(const sx of[-1,1])for(const sy of[-1,1])AIP.push([sx*(HL-.015),sy*(HW-.015)]);AIP.push([0,HW-.005],[0,-HW+.005]);
+function aiPick(){
+  const c=balls[0],my=groups[2],left=g=>balls.filter(b=>!b.out&&b.n&&grpOf(b.n)===g).length;
+  if(brk)return{ang:Math.atan2(-c.y,HL/2-c.x),pw:92};
+  const tgt=balls.filter(b=>!b.out&&b.n&&(my?grpOf(b.n)===(left(my)?my:8):b.n!==8));
+  const clear=(x1,y1,x2,y2,ig)=>balls.every(b=>b.out||ig.includes(b)||distSeg(b.x,b.y,x1,y1,x2,y2)>2.05*R);
+  let best=null;
+  for(const o of tgt)for(const p of AIP){
+    const dx=p[0]-o.x,dy=p[1]-o.y,dl=Math.hypot(dx,dy),gx=o.x-dx/dl*2*R,gy=o.y-dy/dl*2*R,cx=gx-c.x,cy=gy-c.y,cl=Math.hypot(cx,cy);
+    if(cl<.02)continue;const cut=(cx*dx+cy*dy)/(cl*dl);
+    if(cut<.4||Math.abs(gx)>X||Math.abs(gy)>Y)continue;
+    if(!clear(c.x,c.y,gx,gy,[c,o])||!clear(o.x,o.y,p[0],p[1],[o,c]))continue;
+    const sc=cut*2-(cl+dl)*.6;if(!best||sc>best.sc)best={sc,ang:Math.atan2(cy,cx),D:cl+dl}}
+  if(!best){const o=tgt.slice().sort((a,b)=>Math.hypot(a.x-c.x,a.y-c.y)-Math.hypot(b.x-c.x,b.y-c.y))[0]||balls[1];
+    best={ang:Math.atan2(o.y-c.y,o.x-c.x),D:Math.hypot(o.x-c.x,o.y-c.y)*1.5}}
+  const err=[.035,.014,.004][level-1]*(Math.random()*2-1),v=1.3+Math.sqrt(.236*best.D)*1.6;
+  return{ang:best.ang+err,pw:Math.max(16,Math.min(88,Math.round(v/7.5*100)))}}
+try{stats=JSON.parse(localStorage.getItem("bil8")||"")||stats}catch(e){}
+function showMenu(){$("menu").hidden=false;$("mGo").hidden=!started||state==="end";$("stats").textContent=`Gʻalabalar: siz ${stats.you} · kompyuter ${stats.cpu}`}
+const startGame=m=>{mode=m;started=true;aiPlan=null;$("menu").hidden=true;$("over").hidden=true;reset()};
+$("lv").onclick=e=>{const b=e.target.closest("button");if(!b)return;level=+b.dataset.l;[...$("lv").children].forEach(x=>x.classList.toggle("on",x===b))};
+$("mAI").onclick=()=>startGame("ai");$("mPV").onclick=()=>startGame("pvp");$("mGo").onclick=()=>{$("menu").hidden=true};
+$("oAssist").onchange=e=>{assist=e.target.checked};$("oSnd").onchange=e=>{sndOn=e.target.checked};
+$("mb").onclick=showMenu;$("tomenu").onclick=()=>{$("over").hidden=true;showMenu()};
+const upd=()=>{$("lab").textContent=`Kuch ${$("pow").value}% · burchak ${$("elev").value}°`};$("pow").oninput=$("elev").oninput=upd;
+reset();drawPad();resize();showMenu();requestAnimationFrame(loop);
+</script></body></html>
